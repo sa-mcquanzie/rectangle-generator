@@ -75,36 +75,6 @@ const DrawingArea = ({children}: ReactElementProps): ReactElement => (
   </div>
 )
 
-// const getBoundingBox = (shape: Konva.Shape) => {
-//   const {x, y, width, height, rotation} = shape.attrs;
-//   const theta = (rotation * Math.PI) / 180;
-
-//   const cx = x + width / 2;
-//   const cy = y + height / 2;
-
-//   const corners = [
-//     {x: x, y: y},
-//     {x: x + width, y: y},
-//     {x: x + width, y: y + height},
-//     {x: x, y: y + height}
-//   ];
-
-//   const rotatedCorners = corners.map(corner => ({
-//     x: cx + (corner.x - cx) * Math.cos(theta) - (corner.y - cy) * Math.sin(theta),
-//     y: cy + (corner.x - cx) * Math.sin(theta) + (corner.y - cy) * Math.cos(theta)
-//   }));
-
-//   const center_x = (corners[0].x + corners[1].x + corners[2].x + corners[3].x) / 4
-//   const center_y = (corners[0].y + corners[1].y + corners[2].y + corners[3].y) / 4
-
-//   const minX = Math.min(...rotatedCorners.map(corner => corner.x));
-//   const minY = Math.min(...rotatedCorners.map(corner => corner.y));
-//   const maxX = Math.max(...rotatedCorners.map(corner => corner.x));
-//   const maxY = Math.max(...rotatedCorners.map(corner => corner.y));
-
-//   return {x: center_x - minX, y: center_y - minY, width: maxX - minX, height: maxY - minY};
-// }
-
 const hasSeparatingAxis = (corners1: Konva.Vector2d[], corners2: Konva.Vector2d[]) => {
   const axes = [
     {x: corners1[1].x - corners1[0].x, y: corners1[1].y - corners1[0].y},
@@ -334,7 +304,6 @@ const Page = (): ReactElement => {
   const [shapes, setShapes] = useState<ShapeConfig[]>([])
   const [floor, setFloor] = useState<ShapeConfig | null>(null)
   const [selectedShape, setSelectedShape] = React.useState<string | null>(null)
-  const [shapeWasMoved, setShapeWasMoved] = React.useState<boolean>(false)
 
   const stageWidth = window.innerWidth * 0.8
   const stageHeight = window.innerHeight
@@ -354,6 +323,7 @@ const Page = (): ReactElement => {
 
   const addRectangle = () => {
     const newRectangleConfig: ShapeConfig = {
+      name: 'rectangle',
       id: `${shapes.map(shape => +shape.id).reduce((a, b) => Math.max(a, b), -Infinity) + 1}`,
       x: (stageWidth / 2) - (rectangleSize / 2),
       y: (stageHeight / 2) - (rectangleSize / 2),
@@ -381,21 +351,21 @@ const Page = (): ReactElement => {
   }, [])
 
   
-  useEffect(() => {
-    if (!shapeWasMoved) return
+  // useEffect(() => {
+  //   if (!shapeWasMoved) return
 
-    shapes.forEach((shape) => {
-      shapes.forEach((otherShape) => {
-        if ((shape !== otherShape) && areColliding(shape, otherShape)) {
-          console.log("Bam")
-        }
-      })
-    })
+  //   shapes.forEach((shape) => {
+  //     shapes.forEach((otherShape) => {
+  //       if ((shape !== otherShape) && areColliding(shape, otherShape)) {
+  //         console.log("Bam")
+  //       }
+  //     })
+  //   })
 
-    console.log("Shape was moved")
+  //   console.log("Shape was moved")
 
-    setShapeWasMoved(false)
-  }, [shapeWasMoved])
+  //   setShapeWasMoved(false)
+  // }, [shapeWasMoved])
 
   return (
     <PageContainer>
@@ -426,12 +396,19 @@ const Page = (): ReactElement => {
                 isSelected={shape.id === selectedShape}
                 onSelect={() => {setSelectedShape(shape.id)}}
                 onDragMove={(ev: Konva.KonvaEventObject<DragEvent>) => {
-                  shapes.forEach((otherShape) => {
-                    if (shape !== otherShape && areColliding(shape, otherShape)) {
-                      console.log('Bam')
-                      ev.target.setAttrs({fill: 'red'})
-                    }
-                  })
+                  const shapes = ev.target.getLayer()?.children.filter((child) => child.name() === 'rectangle' && child.getClassName() === 'Rect')
+                  
+                  console.log(shapes)
+
+                  if (shapes !== undefined && shapes?.length > 1) {
+                    shapes.forEach((otherShape) => {
+                      if (shape !== otherShape && areColliding(shape, otherShape)) {
+                        console.log('Bam')
+                        ev.target.setAttrs({fill: 'red'})
+                      }
+                    })
+                  }
+
                 }}
               />
             ))}
